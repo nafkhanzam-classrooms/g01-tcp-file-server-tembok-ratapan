@@ -4,8 +4,8 @@
 ## Anggota Kelompok
 | Nama           | NRP        | Kelas     |
 | ---            | ---        | ----------|
-|                |            |           |
-|                |            |           |
+| XXX                | XXX           | XXX          |
+| Khairan Cherokee Musthofa               | 5025241215           | D          |
 
 ## Link Youtube (Unlisted)
 Link ditaruh di bawah ini
