@@ -19,9 +19,6 @@ PROTOCOL FRAMING (Dari PPT)
 
 Method 5 : Length Prefix : Digunakan untuk mengirim pesan/perintah (seperti teks biasa, /list, /upload). Kita akan menambahkan 4-byte header di setiap pesan yang berisi panjang ukuran pesan tersebut.
 
-Method 6 : Chunked Blocks : Digunakan khusus untuk transfer file biner. File dipecah menjadi bagian-bagian (chunk) dan dikirim dengan panjangnya, lalu diakhiri dengan ukuran 0 sebagai penanda akhir (EOF).
-
-Method 5: Length Prefix
 ```
 import socket, threading, select, struct, os, sys
 def send_msg(sock, data_bytes):
@@ -42,7 +39,7 @@ def recv_msg(sock):
         buf += chunk
     return buf
 ```
-Method 6: Chunked Blocks
+Method 6 : Chunked Blocks : Digunakan khusus untuk transfer file biner. File dipecah menjadi bagian-bagian (chunk) dan dikirim dengan panjangnya, lalu diakhiri dengan ukuran 0 sebagai penanda akhir (EOF).
 ```
 def send_file(sock, path, chunk_size=4096):
     with open(path, "rb") as f:
