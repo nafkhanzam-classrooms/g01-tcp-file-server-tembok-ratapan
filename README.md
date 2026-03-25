@@ -68,6 +68,21 @@ def recv_file(sock, path):
 ```
 Agar kodenya tidak panjang dan berulang, kami menggunakan fungsi PROTOCOL FRAMING tersebut di setiap file (client & server)
 
+TCP adalah arus byte stream, yang berarti ia mengirim data seperti aliran air tanpa batas pesan yang jelas. Disini kami menggunakan modul struct untuk membuat batasan tersebut.
+
+```
+struct.pack(">I", len(data_bytes))
+```
+Fungsi ini mengemas (pack) sebuah angka integer (panjang data pesanmu) menjadi 4-byte biner dengan format Big-Endian (>I). Ini bertindak sebagai "kepala" (header) pesan.
+```
+struct.unpack(">I", header)[0]
+```
+Ini adalah kebalikannya. Server membaca 4-byte pertama, lalu "membongkar" (unpack) kode biner tersebut kembali menjadi angka integer agar tahu seberapa besar data yang harus diunduh.
+```
+Logika send_file & recv_file
+```
+Untuk mengirim file besar (Chunked Blocks), program membaca file sepotong demi sepotong (misal 4096 byte) menggunakan `f.read(chunk_size)` lalu mengirimnya secara berurutan. Jika file sudah habis terbaca, program akan mengirim chunk berukuran 0 sebagai bendera penanda akhir atau EOF.
+
 ### client.py
 ```
 # (Masukkan PROTOCOL FRAMING)
@@ -184,7 +199,7 @@ while True:
     conn.close()
 ```
 
--socket.socket(AF_INET, SOCK_STREAM)
+- socket.socket(AF_INET, SOCK_STREAM)
 
  membuat socket
 
@@ -193,13 +208,9 @@ while True:
 
 - setsockopt(SO_REUSEADDR, 1)
 
- menghindari error:
+menghindari error : Address already in use
 
-Address already in use
-
-artinya:
-
-port bisa dipakai ulang tanpa nunggu timeout OS
+artinya : port bisa dipakai ulang tanpa nunggu timeout OS
 
 - bind(('0.0.0.0', 5000))
 
@@ -217,9 +228,7 @@ angka 1 = backlog:
 
 jumlah antrian koneksi yang ditahan OS
 
-artinya:
-
-kalau banyak client datang → hanya 1 yang diantrikan
+artinya : kalau banyak client datang → hanya 1 yang diantrikan
 
 - while True
 
@@ -227,11 +236,7 @@ kalau banyak client datang → hanya 1 yang diantrikan
 
 - conn, addr = server.accept()
 
-Fungsi:
-
-menunggu client masuk
-
-saat ada client → return:
+Fungsi : menunggu client masuk & saat ada client → return:
 
 `conn` = socket khusus untuk client itu
 
@@ -301,11 +306,7 @@ while True:
 - clients = []
  list global untuk menyimpan semua koneksi client
 
-Fungsi:
-
-untuk broadcast (chat)
-
-untuk tracking siapa saja yang terhubung
+Fungsi : untuk broadcast (chat) & untuk tracking siapa saja yang terhubung
 
 - def handle_client(conn, addr):
   
@@ -317,20 +318,14 @@ untuk tracking siapa saja yang terhubung
   
 - clients.append(conn)
   
- menambahkan client ke daftar aktif
-
-supaya bisa kirim pesan ke client lain
+menambahkan client ke daftar aktif, supaya bisa kirim pesan ke client lain
 
 - print("Connected:", addr)
   
  hanya logging (biar tahu siapa yang connect)
 
 - while True:
- loop utama untuk melayani client ini
-
-selama client masih terhubung
-
-server terus menunggu request
+loop utama untuk melayani client ini, selama client masih terhubung, & server terus menunggu request
 
 - msg = recv_msg(conn)
   
@@ -344,15 +339,16 @@ server terus menunggu request
 
     kondisi client disconnect
 
-client close connection
+client close connection & error jaringan
 
-error jaringan
+maka : akan keluar dari loop & thread selesai
 
-maka:
+```
+threading.Thread(target=receive, daemon=True).start()
+```
+Baris ini membuat proses cabang (thread) yang khusus menjalankan fungsi `receive` di latar belakang.
 
-keluar dari loop
-
-thread selesai
+Argumen `daemon=True` memastikan thread penerima pesan ini akan otomatis mati ketika program utamanya (menu input) kamu tutup.
 
 ### server-select.py
 ```
@@ -418,7 +414,7 @@ while True:
 
 - input_sockets = [server]
 
- ini adalah daftar semua socket yang dipantau
+ini adalah daftar semua socket yang dipantau
 
 -   Inisialisasi Server
 
@@ -428,47 +424,30 @@ server.bind(('0.0.0.0', 5000))
 server.listen(5)
 ```
 
-sama seperti sync:
-
-buat server TCP
-buka port 5000
+sama seperti sync : buat server TCP & buka port 5000
 
 - input_sockets = [server]
 
-list ini berisi:
+list ini berisi : awalnya hanya server
 
-awalnya hanya server
-
-nanti:
-
-akan berisi semua client juga
-
-memonitor banyak socket sekaligus
+nanti : akan berisi semua client juga & memonitor banyak socket sekaligus
 
 - select.select(...)
 ```
 read_ready, _, _ = select.select(input_sockets, [], [])
 ```
 
- fungsi ini:
-
-memantau semua socket di input_sockets
-
-return socket yang siap dibaca
+fungsi ini : memantau semua socket di input_sockets kemudian return socket yang siap dibaca
 
 - Loop Utama
   
-for sock in read_ready:
-
- hanya memproses socket yang siap
+for sock in read_ready : hanya memproses socket yang siap
 
 - Jika Server Socket
 
 if sock == server:
 
-artinya:
-
-ada client baru masuk
+artinya : ada client baru masuk
 
 - Accept Client
   
@@ -476,20 +455,14 @@ conn, addr = server.accept()
 
 input_sockets.append(conn)
 
-penting:
-
-client ditambahkan ke list
-
-supaya ikut dimonitor
+penting : client ditambahkan ke list supaya ikut dimonitor
 
 - Jika Client Socket
   
 else:
     msg = recv_msg(sock)
 
-artinya:
-
-client ini mengirim data
+artinya : client ini mengirim data
 
 - Jika Client Disconnect
   
@@ -498,6 +471,19 @@ if not msg:
     sock.close()
 
 hapus dari monitoring
+
+```
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+```
+Membuat socket yang menggunakan alamat IPv4 (`AF_INET`) dan protokol koneksi TCP (`SOCK_STREAM`).
+```
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+```
+Ini adalah fungsi life-saver. Saat server dimatikan paksa (Ctrl+C), port biasanya tertahan sementara oleh sistem operasi. Baris ini memaksa OS untuk langsung merilis port 5000 sehingga server bisa dijalankan ulang tanpa memunculkan error "Address already in use".
+```
+server.listen(5)
+```
+Menentukan berapa antrean (backlog) maksimal untuk koneksi klien yang belum di-`accept` oleh server.
 
 ### server-poll.py
 ```
@@ -577,9 +563,7 @@ poll_obj = select.poll()
 poll_obj.register(server.fileno(), select.POLLIN)
 ```
 
- Membuat poll object
-
- Mendaftarkan server untuk dipantau (event: ada data masuk)
+ Membuat poll object & Mendaftarkan server untuk dipantau (event: ada data masuk)
 
 - Mapping FD ke Socket
 ```fd_map = {server.fileno(): server}```
@@ -612,22 +596,14 @@ if sock is server:
     fd_map[conn.fileno()] = conn
 ```
 
-Ada client baru:
-
-diterima
-
-didaftarkan ke poll
-
-dimasukkan ke map
+Ada client baru : diterima, didaftarkan ke poll, & dimasukkan ke map
 
 - Jika Client Kirim Data
 ```
 elif event & select.POLLIN:
 ```
 
-Artinya:
-
-socket siap dibaca
+Artinya : socket siap dibaca
 
 - Terima Data
 ```
@@ -643,13 +619,73 @@ if not msg:
     sock.close()
 ```
 
-Hapus dari:
+Hapus dari : poll, map, &tutup koneksi
 
-poll
+## Tambahan Penjelasan
 
-map
+### Server Sync
+(`server-sync.py`): Hanya menggunakan perulangan `while` biasa. Fungsi `conn.recv()` di sini bersifat memblokir (blocking) seluruh program sampai klien yang sedang aktif mengirim sesuatu. Klien lain yang mencoba masuk otomatis akan diabaikan
 
-tutup koneksi
+### Server Thread
+(`server-thread.py`): Setiap kali ada klien baru yang terhubung lewat `accept()`, server membuat thread baru khusus untuk melayani klien tersebut. Main thread server tidak pernah berhenti dan langsung berbalik ke atas untuk siap menerima klien lain
+
+### Server Select
+(`server-select.py`): Menggunakan I/O Multiplexing. Fungsi `select.select(input_sockets, [], []`) memantau banyak socket sekaligus dalam satu thread saja. Jika socket milik server yang bereaksi, artinya ada klien baru yang ingin masuk. Jika socket klien yang bereaksi, artinya ada pesan/file yang masuk.
+
+### Server Poll
+(`server-poll.py`): Secara konsep sama dengan Select, namun ia lebih efisien khusus untuk OS berbasis UNIX/Linux. Poll tidak membaca daftar socket secara langsung, melainkan membaca File Descriptor (ID angka dari sebuah socket). Fungsi `poll_obj.register()` mendaftarkan ID untuk dipantau , dan `poll_obj.poll()` menyeleksi ID mana yang saat ini sedang mengirim data.
+
+### Fitur /list (Melihat Daftar File)
+Fitur ini paling sederhana karena hanya melibatkan pertukaran teks biasa (menggunakan `send_msg`).
+
+Sisi Client : Saat kamu mengetik `1` (List files), klien cukup mengirimkan string byte `b'/list'` ke server.
+
+Sisi Server : 
+1. Server menerima pesan tersebut dan mengecek `if msg.startswith(b'/list'):`.
+2. Server memanggil `os.listdir(SERVER_DIR)` yang menghasilkan list berisi nama-nama file (misal: `['tugas.pdf', 'foto.png']`).
+3. List tersebut digabungkan menjadi satu string utuh dengan pemisah baris (`'\n'.join(files)`).
+4. Server membalas ke klien menggunakan `send_msg()`. Klien tinggal menge-print hasilnya.
+
+### Fitur /upload (Mengirim File ke Server)
+Proses upload membutuhkan dua tahap pengiriman yang dilakukan secara berurutan agar server tahu nama file yang datang sebelum mulai menulis file biner.
+
+Sisi Client : 
+1. Mengirim "Niat" dan "Nama File": `send_msg(s, b'/upload namafile.txt'`)
+2. Segera setelah itu, klien mulai memompa isi file binernya menggunakan `send_file(s, filename)`.
+
+Sisi Server:
+1. Membaca pesan pertama. Jika terbaca `b'/upload namafile.txt'`, server membelah string tersebut dengan spasi (`msg.split(b' ', 1)`) untuk mendapatkan nama filenya.
+2. Menyiapkan target lokasi dengan `os.path.join()`.
+3. Server langsung memanggil `recv_file(conn, path)`. Karena posisi antrean TCP sedang berada tepat setelah teks `/upload`, fungsi `recv_file` akan otomatis menangkap chunk-chunk biner yang dikirim klien hingga mencapai EOF (ukuran 0).
+4. Setelah `recv_file` selesai, server mengirimkan pesan sukses ke klien.
+
+### Fitur /download (Mengambil File dari Server)
+Download adalah kebalikan dari upload, namun memiliki tantangan ekstra: Klien harus tahu kapan sebuah pesan masuk itu adalah teks biasa (chat) dan kapan pesan itu adalah file biner yang harus disave.
+
+Sisi Client (Request) : Klien mengirim `send_msg(s, b'/download namafile.txt')`.
+
+Sisi Server :
+1. Mengecek apakah file ada dengan `os.path.exists()`.
+2. Jika ada, server tidak langsung mengirim file biner. Server mengirimkan bendera / sinyal dulu: `send_msg(conn, b'/download_ready namafile.txt')`.
+3. Setelah bendera terkirim, barulah server mengirim file binernya menggunakan `send_file()`.
+
+Sisi Client (Receive Thread) :
+1. Klien terus memantau pesan masuk (di fungsi `receive())`.
+2. Jika pesan yang masuk diawali dengan `b'/download_ready'`, klien tidak akan menge-print pesan tersebut.
+3. Klien mengekstrak nama filenya, lalu segera memanggil `recv_file(s, filepath)`. Aliran biner TCP berikutnya akan disedot dan disave ke dalam folder `client_files/`.
+
+### Fitur /chat (Pesan Broadcast)
+Fitur ini bertujuan mendistribusikan pesan teks dari satu pengguna ke semua pengguna lain yang sedang terhubung.
+
+Sisi Client : Klien membungkus ketikan user dengan prefix: `send_msg(s, b'/chat Halo semua!')`.
+
+Sisi Server :
+1. Server membuang kata `/chat` dan mengambil sisa pesannya (Halo semua!).
+2. Di sinilah letak perbedaan arsitektur (`Select, Poll, Thread`). Server memiliki daftar klien yang aktif (entah dalam bentuk list bernama `clients, input_sockets, atau fd_map)`.
+3. Server melakukan iterasi (perulangan) ke semua klien tersebut.
+4. Logika penting : `if c != conn: (Atau if c != sock:)`. Ini memastikan server mengirim pesan forward ke semua orang, kecuali ke orang yang mengirimkan pesan tersebut (agar pesannya tidak mantul / echo kembali ke pengirim).
+
+
 
 ## Screenshot Hasil
 
