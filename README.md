@@ -388,4 +388,23 @@ Server-Sync
 (Add Client 1)
 <img width="1212" height="257" alt="image" src="https://github.com/user-attachments/assets/a1a15e3c-d4ba-4c68-a928-a698be065e6e" />
 (Add Client 2)
+<img width="1211" height="493" alt="image" src="https://github.com/user-attachments/assets/3268c795-4ff9-4550-b242-b6f10204b0ea" />
+(Client 1 Block)
 
+Server-Select
+<img width="1210" height="267" alt="image" src="https://github.com/user-attachments/assets/bcc777eb-5578-49e0-aa2f-8635e0a21361" />
+(Run Server-Select)
+<img width="1209" height="507" alt="image" src="https://github.com/user-attachments/assets/728a9b0b-54b8-4689-a38d-6d1419455e1a" />
+(Add 3 Client)
+<img width="1210" height="511" alt="image" src="https://github.com/user-attachments/assets/9f0e50dd-bb16-4baa-810d-c61e42d863c7" />
+(Upload dari Client 2)
+<img width="281" height="244" alt="image" src="https://github.com/user-attachments/assets/e5b3fd15-e1dc-4e06-a9a4-cd44eb77d030" />
+(Hasil Upload masuk di Server File)
+<img width="1214" height="581" alt="image" src="https://github.com/user-attachments/assets/fd31303d-2c53-43c2-a51a-8158bd027cb5" />
+(Download dari Client 3)
+<img width="274" height="271" alt="image" src="https://github.com/user-attachments/assets/01f2659c-06a8-4a7c-ba6c-6a6ca8793cb7" />
+(Hasil Download masuk di Client File)
+<img width="1210" height="640" alt="image" src="https://github.com/user-attachments/assets/728955b4-eff9-4fce-be45-047821558cce" />
+(Kirim Chat dari Client 2)
+<img width="1211" height="641" alt="image" src="https://github.com/user-attachments/assets/059ced85-ece9-43e3-9096-e04dc539e012" />
+(Kirim Chat dari Client 3)
