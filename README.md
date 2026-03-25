@@ -100,7 +100,7 @@ def receive():
         except Exception as e:
             break
 
-# Spawn thread untuk receive (PPT Hal 40)
+# Spawn thread untuk receive (dari PPT)
 threading.Thread(target=receive, daemon=True).start()
 
 while True:
@@ -135,7 +135,53 @@ while True:
 
 server-sync.py
 ```
+# (Masukkan PROTOCOL FRAMING)
+SERVER_DIR = 'server_files'
+os.makedirs(SERVER_DIR, exist_ok=True)
 
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind(('0.0.0.0', 5000))
+server.listen(1)
+
+print("SYNC Server (Blocking) running on port 5000...")
+
+while True:
+    conn, addr = server.accept()
+    print("Connected:", addr)
+
+    while True:
+        try:
+            msg = recv_msg(conn)
+            if not msg: break
+
+            if msg.startswith(b'/list'):
+                files = os.listdir(SERVER_DIR)
+                send_msg(conn, ('\n'.join(files) or 'No files').encode())
+
+            elif msg.startswith(b'/upload'):
+                filename = msg.split(b' ', 1)[1].decode()
+                recv_file(conn, os.path.join(SERVER_DIR, filename))
+                send_msg(conn, f"Upload {filename} selesai.".encode())
+
+            elif msg.startswith(b'/download'):
+                filename = msg.split(b' ', 1)[1].decode()
+                path = os.path.join(SERVER_DIR, filename)
+                if os.path.exists(path):
+                    send_msg(conn, f'/download_ready {filename}'.encode())
+                    send_file(conn, path)
+                else:
+                    send_msg(conn, b'File not found')
+                    
+            elif msg.startswith(b'/chat'):
+                text = msg.split(b' ', 1)[1].decode()
+                send_msg(conn, f"[Server SYNC tidak bisa broadcast. Pesanmu: {text}]".encode())
+
+        except Exception:
+            break
+
+    print("Disconnected:", addr)
+    conn.close()
 ```
 
 server-thread.py
