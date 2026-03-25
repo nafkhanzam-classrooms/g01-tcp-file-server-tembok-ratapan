@@ -3,7 +3,7 @@
 
 ## Anggota Kelompok
 | Nama           | NRP        | Kelas     |
-| ---            | ---        | ----------|
+| Afsal Murtaza            | 5025241190        | D|
 | XXX                | XXX           | XXX          |
 | Khairan Cherokee Musthofa               | 5025241215           | D          |
 
