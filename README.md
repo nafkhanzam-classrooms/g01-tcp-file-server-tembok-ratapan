@@ -379,3 +379,10 @@ while True:
 ```
 
 ## Screenshot Hasil
+
+Run Server-Sync
+```
+SS_Hasil/run server sync.png
+```
+
+
