@@ -15,12 +15,15 @@ Link ditaruh di bawah ini
 
 ## Penjelasan Program
 ```
-import socket, threading, select, struct, os, sys
 # ==========================================
 # PROTOCOL FRAMING (Dari PPT)
 # ==========================================
-
+```
+```
 # Method 5: Length Prefix
+```
+```
+import socket, threading, select, struct, os, sys
 def send_msg(sock, data_bytes):
     header = struct.pack(">I", len(data_bytes))
     sock.sendall(header + data_bytes)
