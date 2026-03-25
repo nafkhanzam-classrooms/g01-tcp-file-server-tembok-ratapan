@@ -380,9 +380,12 @@ while True:
 
 ## Screenshot Hasil
 
-Run Server-Sync
-```
-SS_Hasil/run server sync.png
-```
+Server-Sync
 
+https://github.com/nafkhanzam-classrooms/g01-tcp-file-server-tembok-ratapan/blob/d38e8ecdbe25f58d757de7baf8077ce14d172e4f/SS_Hasil/run%20server%20sync.png
+(Run Server-Sync)
+https://github.com/nafkhanzam-classrooms/g01-tcp-file-server-tembok-ratapan/blob/d38e8ecdbe25f58d757de7baf8077ce14d172e4f/SS_Hasil/client%201%20sync.png
+(Add Client 1)
+https://github.com/nafkhanzam-classrooms/g01-tcp-file-server-tembok-ratapan/blob/d38e8ecdbe25f58d757de7baf8077ce14d172e4f/SS_Hasil/client%202%20sync.png
+(Add Client 2)
 
