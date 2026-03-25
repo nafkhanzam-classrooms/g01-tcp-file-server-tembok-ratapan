@@ -383,12 +383,12 @@ while True:
 Server-Sync
 
 <img width="1213" height="212" alt="image" src="https://github.com/user-attachments/assets/8f0ddd12-e36c-4d8c-8c33-080e6a371bf2" />
-```(Run Server-Sync)```
+(Run Server-Sync)
 
-```
+
 <img width="1219" height="276" alt="image" src="https://github.com/user-attachments/assets/8dccdb5c-ae56-4652-a71a-33f3bd24d2fb" />
 (Add Client 1)
-```
+
 
 <img width="1212" height="257" alt="image" src="https://github.com/user-attachments/assets/a1a15e3c-d4ba-4c68-a928-a698be065e6e" />
 (Add Client 2)
