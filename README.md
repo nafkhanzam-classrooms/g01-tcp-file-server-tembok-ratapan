@@ -379,9 +379,9 @@ while True:
 ```
 
 ## Screenshot Hasil
-```
-Server-Sync
-```
+
+### Server-Sync
+
 <img width="1213" height="212" alt="image" src="https://github.com/user-attachments/assets/8f0ddd12-e36c-4d8c-8c33-080e6a371bf2" />
 (Run Server-Sync)
 
@@ -397,9 +397,9 @@ Server-Sync
 <img width="1211" height="493" alt="image" src="https://github.com/user-attachments/assets/3268c795-4ff9-4550-b242-b6f10204b0ea" />
 (Client 1 Block)
 
-```
-Server-Select
-```
+
+### Server-Select
+
 <img width="1210" height="267" alt="image" src="https://github.com/user-attachments/assets/bcc777eb-5578-49e0-aa2f-8635e0a21361" />
 (Run Server-Select)
 
