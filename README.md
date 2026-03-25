@@ -247,12 +247,135 @@ while True:
 
 server-select.py
 ```
+# (Masukkan PROTOCOL FRAMING)
+SERVER_DIR = 'server_files'
+os.makedirs(SERVER_DIR, exist_ok=True)
 
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind(('0.0.0.0', 5000))
+server.listen(5)
+
+input_sockets = [server] # Seperti dari PPT
+print("SELECT Server running on port 5000...")
+
+while True:
+    read_ready, _, _ = select.select(input_sockets, [], []) # dari PPT 
+
+    for sock in read_ready:
+        if sock == server:
+            conn, addr = server.accept()
+            input_sockets.append(conn)
+            print("Connected:", addr)
+        else:
+            try:
+                msg = recv_msg(sock)
+                if not msg:
+                    input_sockets.remove(sock)
+                    sock.close()
+                    continue
+
+                if msg.startswith(b'/list'):
+                    files = os.listdir(SERVER_DIR)
+                    send_msg(sock, ('\n'.join(files) or 'No files').encode())
+
+                elif msg.startswith(b'/upload'):
+                    filename = msg.split(b' ', 1)[1].decode()
+                    recv_file(sock, os.path.join(SERVER_DIR, filename))
+                    send_msg(sock, f"Upload {filename} selesai.".encode())
+                    
+                    for c in input_sockets:
+                        if c not in [server, sock]: send_msg(c, f"[Server] File baru: {filename}".encode())
+
+                elif msg.startswith(b'/download'):
+                    filename = msg.split(b' ', 1)[1].decode()
+                    path = os.path.join(SERVER_DIR, filename)
+                    if os.path.exists(path):
+                        send_msg(sock, f'/download_ready {filename}'.encode())
+                        send_file(sock, path)
+                    else:
+                        send_msg(sock, b'File not found')
+                        
+                elif msg.startswith(b'/chat'):
+                    text = msg.split(b' ', 1)[1].decode()
+                    for c in input_sockets:
+                        if c not in [server, sock]:
+                            send_msg(c, f"[User {sock.getpeername()[1]}]: {text}".encode())
+
+            except Exception:
+                input_sockets.remove(sock)
+                sock.close()
 ```
 
 server-poll.py
 ```
+# (Masukkan PROTOCOL FRAMING)
+SERVER_DIR = 'server_files'
+os.makedirs(SERVER_DIR, exist_ok=True)
 
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server.bind(('0.0.0.0', 5000))
+server.listen(5)
+
+# Setup POLL seperti dari PPT
+poll_obj = select.poll()
+poll_obj.register(server.fileno(), select.POLLIN)
+fd_map = {server.fileno(): server}
+
+print("POLL Server running on port 5000... (Run in Linux/WSL)")
+
+while True:
+    events = poll_obj.poll() # dari PPT
+
+    for fd, event in events:
+        sock = fd_map[fd]
+
+        if sock is server:
+            conn, addr = server.accept()
+            poll_obj.register(conn.fileno(), select.POLLIN)
+            fd_map[conn.fileno()] = conn
+            print("Connected:", addr)
+
+        elif event & select.POLLIN:
+            try:
+                msg = recv_msg(sock)
+                if not msg:
+                    poll_obj.unregister(fd)
+                    del fd_map[fd]
+                    sock.close()
+                    continue
+
+                if msg.startswith(b'/list'):
+                    files = os.listdir(SERVER_DIR)
+                    send_msg(sock, ('\n'.join(files) or 'No files').encode())
+
+                elif msg.startswith(b'/upload'):
+                    filename = msg.split(b' ', 1)[1].decode()
+                    recv_file(sock, os.path.join(SERVER_DIR, filename))
+                    send_msg(sock, f"Upload {filename} selesai.".encode())
+                    
+                    for fd_key, c in fd_map.items():
+                        if c not in [server, sock]: send_msg(c, f"[Server] File baru: {filename}".encode())
+
+                elif msg.startswith(b'/download'):
+                    filename = msg.split(b' ', 1)[1].decode()
+                    path = os.path.join(SERVER_DIR, filename)
+                    if os.path.exists(path):
+                        send_msg(sock, f'/download_ready {filename}'.encode())
+                        send_file(sock, path)
+                    else:
+                        send_msg(sock, b'File not found')
+                        
+                elif msg.startswith(b'/chat'):
+                    text = msg.split(b' ', 1)[1].decode()
+                    for fd_key, c in fd_map.items():
+                        if c not in [server, sock]: send_msg(c, f"[User {sock.getpeername()[1]}]: {text}".encode())
+
+            except Exception:
+                poll_obj.unregister(fd)
+                del fd_map[fd]
+                sock.close()
 ```
 
 ## Screenshot Hasil
