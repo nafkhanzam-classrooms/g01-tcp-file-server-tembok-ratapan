@@ -68,7 +68,7 @@ def recv_file(sock, path):
 ```
 Agar kodenya tidak panjang dan berulang, kami menggunakan fungsi PROTOCOL FRAMING tersebut di setiap file (client & server)
 
-client.py
+### client.py
 ```
 # (Masukkan PROTOCOL FRAMING)
 CLIENT_DIR = 'client_files'
@@ -133,7 +133,7 @@ while True:
         break
 ```
 
-server-sync.py
+### server-sync.py
 ```
 # (Masukkan PROTOCOL FRAMING)
 SERVER_DIR = 'server_files'
@@ -184,7 +184,60 @@ while True:
     conn.close()
 ```
 
-server-thread.py
+-socket.socket(AF_INET, SOCK_STREAM)
+
+ membuat socket
+
+`AF_INET` → pakai IPv4
+`SOCK_STREAM` → TCP (connection-oriented)
+
+- setsockopt(SO_REUSEADDR, 1)
+
+ menghindari error:
+
+Address already in use
+
+artinya:
+
+port bisa dipakai ulang tanpa nunggu timeout OS
+
+- bind(('0.0.0.0', 5000))
+
+menentukan alamat server
+
+`0.0.0.0` → menerima dari semua IP
+
+`5000` → port yang dibuka
+
+- listen(1)
+
+server mulai “mendengar” koneksi
+
+angka 1 = backlog:
+
+jumlah antrian koneksi yang ditahan OS
+
+artinya:
+
+kalau banyak client datang → hanya 1 yang diantrikan
+
+- while True
+
+ server berjalan terus (infinite loop)
+
+- conn, addr = server.accept()
+
+Fungsi:
+
+menunggu client masuk
+
+saat ada client → return:
+
+`conn` = socket khusus untuk client itu
+
+`addr` = alamat client
+
+### server-thread.py
 ```
 # (Masukkan PROTOCOL FRAMING)
 SERVER_DIR = 'server_files'
@@ -245,7 +298,63 @@ while True:
     threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
 ```
 
-server-select.py
+- clients = []
+ list global untuk menyimpan semua koneksi client
+
+Fungsi:
+
+untuk broadcast (chat)
+
+untuk tracking siapa saja yang terhubung
+
+- def handle_client(conn, addr):
+  
+   fungsi yang dijalankan oleh thread
+
+    conn = socket client
+  
+    addr = alamat client (IP, port)
+  
+- clients.append(conn)
+  
+ menambahkan client ke daftar aktif
+
+supaya bisa kirim pesan ke client lain
+
+- print("Connected:", addr)
+  
+ hanya logging (biar tahu siapa yang connect)
+
+- while True:
+ loop utama untuk melayani client ini
+
+selama client masih terhubung
+
+server terus menunggu request
+
+- msg = recv_msg(conn)
+  
+  menerima data dari client
+
+    ini blocking call
+  
+    thread ini “menunggu” input client
+
+- if not msg: break
+
+    kondisi client disconnect
+
+client close connection
+
+error jaringan
+
+maka:
+
+keluar dari loop
+
+thread selesai
+
+### server-select.py
 ```
 # (Masukkan PROTOCOL FRAMING)
 SERVER_DIR = 'server_files'
@@ -307,7 +416,90 @@ while True:
                 sock.close()
 ```
 
-server-poll.py
+- input_sockets = [server]
+
+ ini adalah daftar semua socket yang dipantau
+
+-   Inisialisasi Server
+
+```
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(('0.0.0.0', 5000))
+server.listen(5)
+```
+
+sama seperti sync:
+
+buat server TCP
+buka port 5000
+
+- input_sockets = [server]
+
+list ini berisi:
+
+awalnya hanya server
+
+nanti:
+
+akan berisi semua client juga
+
+memonitor banyak socket sekaligus
+
+- select.select(...)
+```
+read_ready, _, _ = select.select(input_sockets, [], [])
+```
+
+ fungsi ini:
+
+memantau semua socket di input_sockets
+
+return socket yang siap dibaca
+
+- Loop Utama
+  
+for sock in read_ready:
+
+ hanya memproses socket yang siap
+
+- Jika Server Socket
+
+if sock == server:
+
+artinya:
+
+ada client baru masuk
+
+- Accept Client
+  
+conn, addr = server.accept()
+
+input_sockets.append(conn)
+
+penting:
+
+client ditambahkan ke list
+
+supaya ikut dimonitor
+
+- Jika Client Socket
+  
+else:
+    msg = recv_msg(sock)
+
+artinya:
+
+client ini mengirim data
+
+- Jika Client Disconnect
+  
+if not msg:
+    input_sockets.remove(sock)
+    sock.close()
+
+hapus dari monitoring
+
+### server-poll.py
 ```
 # (Masukkan PROTOCOL FRAMING)
 SERVER_DIR = 'server_files'
@@ -377,6 +569,87 @@ while True:
                 del fd_map[fd]
                 sock.close()
 ```
+
+- Inisialisasi Poll
+
+```
+poll_obj = select.poll()
+poll_obj.register(server.fileno(), select.POLLIN)
+```
+
+ Membuat poll object
+
+ Mendaftarkan server untuk dipantau (event: ada data masuk)
+
+- Mapping FD ke Socket
+```fd_map = {server.fileno(): server}```
+
+ Karena poll pakai file descriptor (angka)
+
+ Kita simpan mapping ke socket asli
+
+- Ambil Event (INTI)
+
+events = poll_obj.poll()
+
+ Mengambil semua socket yang siap
+ Mirip select, tapi lebih scalable
+
+- Loop Event
+
+for fd, event in events:
+```
+    sock = fd_map[fd]
+```
+
+Ambil socket dari fd
+
+- Jika Server (Client Baru)
+```
+if sock is server:
+    conn, addr = server.accept()
+    poll_obj.register(conn.fileno(), select.POLLIN)
+    fd_map[conn.fileno()] = conn
+```
+
+Ada client baru:
+
+diterima
+
+didaftarkan ke poll
+
+dimasukkan ke map
+
+- Jika Client Kirim Data
+```
+elif event & select.POLLIN:
+```
+
+Artinya:
+
+socket siap dibaca
+
+- Terima Data
+```
+msg = recv_msg(sock)
+```
+Ambil pesan dari client
+
+- Jika Client Disconnect
+```
+if not msg:
+    poll_obj.unregister(fd)
+    del fd_map[fd]
+    sock.close()
+```
+
+Hapus dari:
+
+poll
+
+map
+
+tutup koneksi
 
 ## Screenshot Hasil
 
