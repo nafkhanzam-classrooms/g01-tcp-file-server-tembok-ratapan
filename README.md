@@ -8,7 +8,7 @@
 | Khairan Cherokee Musthofa               | 5025241215           | D          |
 
 ## Link Youtube (Unlisted)
-Link ditaruh di bawah ini
+Link ditaruh di bawah inii
 ```
 https://youtu.be/zECTXYZrQpA
 ```
